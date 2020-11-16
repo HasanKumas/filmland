@@ -127,6 +127,7 @@ public class SubscriptionController {
             users.add(currentUser);
             subscription.setUsers(users);
             subscription.setStartDate(LocalDate.now());
+            subscription.setPaymentDate(LocalDate.now().plusMonths(1));
             subscriptionRepository.save(subscription);
             // get saved subscription from database and connect it to current user
             currentUser.getSubscriptions().add(subscriptionRepository.findOneByCategoryNameIgnoreCase(subscription.getCategory().getName()));

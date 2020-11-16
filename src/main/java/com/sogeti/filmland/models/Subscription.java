@@ -22,6 +22,10 @@ public class Subscription {
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate startDate;
 
+    @NotNull
+    @JsonFormat(pattern = "dd-MM-yyyy")
+    private LocalDate paymentDate;
+
     @OneToOne
     @NotNull
     @JsonIgnore
@@ -58,6 +62,14 @@ public class Subscription {
 
     public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
+    }
+
+    public LocalDate getPaymentDate() {
+        return paymentDate;
+    }
+
+    public void setPaymentDate(LocalDate paymentDate) {
+        this.paymentDate = paymentDate;
     }
 
     public Category getCategory() {

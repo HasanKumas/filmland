@@ -32,4 +32,12 @@ public class SubscriptionService {
         }
         return subscription;
     }
+
+    /**
+     * gets all subscriptions from database
+     * @return a list of all subscriptions
+     */
+    public List<Subscription> getAllSubscriptions(){
+        return subscriptionRepository.findAll();
+    }
 }
