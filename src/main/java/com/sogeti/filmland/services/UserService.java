@@ -1,5 +1,7 @@
 package com.sogeti.filmland.services;
 
+import com.sogeti.filmland.dto.LoginRequest;
+import com.sogeti.filmland.exceptions.BadRequestException;
 import com.sogeti.filmland.models.UserAccount;
 import com.sogeti.filmland.repositories.UserAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,5 +43,21 @@ public class UserService implements UserDetailsService {
 
         return new User(user.getUserName(), user.getPassword(), authorities);
 
+    }
+    /**
+     * adds a new user to database
+     * @param user
+     * @return true or false
+     */
+    public Boolean addUser(LoginRequest user) {
+        UserAccount existingUser = userAccountRepository.findOneByUserNameIgnoreCase(user.getEmail());
+        if(existingUser != null) {
+            throw new BadRequestException("This user email is already registered!");
+        }
+        UserAccount newUser = new UserAccount();
+        newUser.setUserName(user.getEmail());
+        newUser.setPassword(passwordEncoder.encode(user.getPassword()));
+        userAccountRepository.save(newUser);
+        return true;
     }
 }

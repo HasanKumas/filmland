@@ -38,6 +38,16 @@ public class UserController {
         return validateUser(user, existingUser);
     }
     /**
+     * adds a new user to database
+     * @param user
+     * @return status and message
+     */
+    @PostMapping("/add-user")
+    public ResponseEntity<String> addUser(@RequestBody LoginRequest user) {
+        userService.addUser(user);
+        return new ResponseEntity<>("User added", HttpStatus.OK);
+    }
+    /**
      * checks if login credentials match
      * @param user
      * @param existingUser
