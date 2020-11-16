@@ -23,9 +23,16 @@ public class UserAccount {
     @Size(min = 8, max = 60)
     private String password;
 
-    @OneToMany(mappedBy = "user")
-    @JsonIgnore
-    private List<Subscription> subscriptions = new ArrayList<>();
+    @ManyToMany
+    @JoinTable(
+            name = "USER_ACCOUNT_SUBSCRIPTIONS",
+            joinColumns = @JoinColumn(name = "user_account_id"),
+            inverseJoinColumns = @JoinColumn(name = "subscription_id"))
+    private List<Subscription> subscriptions;
+
+    public UserAccount() {
+        this.subscriptions = new ArrayList<>();
+    }
 
     public Long getId() {
         return id;

@@ -2,10 +2,14 @@ package com.sogeti.filmland.services;
 
 import com.sogeti.filmland.dto.LoginRequest;
 import com.sogeti.filmland.exceptions.BadRequestException;
+import com.sogeti.filmland.models.Subscription;
 import com.sogeti.filmland.models.UserAccount;
 import com.sogeti.filmland.repositories.UserAccountRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -27,7 +31,7 @@ public class UserService implements UserDetailsService {
 
     /**
      * introduces user to spring security
-     * @param userEmail
+     * @param userEmail email
      * @return UserDetails
      * @throws UsernameNotFoundException
      */
@@ -68,4 +72,26 @@ public class UserService implements UserDetailsService {
         userAccountRepository.save(newUser);
         return true;
     }
+    /**
+     * checks authenticated user matches with requested user
+     * @param user user
+     * @return true or false
+     */
+    public Boolean isAuthenticated(String user){
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (!(authentication instanceof AnonymousAuthenticationToken)) {
+            String userName = authentication.getName();
+            return userName.equals(user);
+        }
+        return false;
+    }
+    /**
+     * gets all subscriptions belong to user
+     * @param user user
+     * @return list of subscriptions
+     */
+    public List<Subscription> getAllUserSubscriptions(UserAccount user){
+        return user.getSubscriptions();
+    }
+
 }

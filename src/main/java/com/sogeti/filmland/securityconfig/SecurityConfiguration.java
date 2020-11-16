@@ -28,6 +28,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .and().sessionManagement().disable();
         //disabled to use h2-console with security
         http.headers().frameOptions().disable();
+        // for customizing authentication exceptions
+        http.exceptionHandling().authenticationEntryPoint(new RestAuthenticationEntryPoint());
     }
 
     @Bean

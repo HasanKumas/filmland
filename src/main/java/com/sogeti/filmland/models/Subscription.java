@@ -6,6 +6,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.persistence.*;
 import javax.validation.constraints.NotNull;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Subscription {
@@ -25,10 +27,14 @@ public class Subscription {
     @JsonIgnore
     private Category category;
 
-    @ManyToOne
+    @ManyToMany(mappedBy = "subscriptions")
     @JsonIgnore
     @NotNull
-    private UserAccount user;
+    private List<UserAccount> users;
+
+    public Subscription() {
+        this.users = new ArrayList<>();
+    }
 
     public Long getId() {
         return id;
@@ -62,11 +68,11 @@ public class Subscription {
         this.category = category;
     }
 
-    public UserAccount getUser() {
-        return user;
+    public List<UserAccount> getUsers() {
+        return users;
     }
 
-    public void setUser(UserAccount user) {
-        this.user = user;
+    public void setUsers(List<UserAccount> users) {
+        this.users = users;
     }
 }
