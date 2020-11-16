@@ -1,9 +1,8 @@
 package com.sogeti.filmland.controllers;
 
-import com.sogeti.filmland.dto.AvailableCategory;
-import com.sogeti.filmland.dto.CategoriesOverview;
-import com.sogeti.filmland.dto.SubscribedCategory;
+import com.sogeti.filmland.dto.*;
 import com.sogeti.filmland.exceptions.BadRequestException;
+import com.sogeti.filmland.exceptions.NotFoundException;
 import com.sogeti.filmland.models.Category;
 import com.sogeti.filmland.models.Subscription;
 import com.sogeti.filmland.models.UserAccount;
@@ -11,6 +10,8 @@ import com.sogeti.filmland.repositories.CategoryRepository;
 import com.sogeti.filmland.repositories.SubscriptionRepository;
 import com.sogeti.filmland.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -86,5 +87,38 @@ public class SubscriptionController {
         categoriesOverview.setAvailableCategories(availableCategories);
         categoriesOverview.setSubscribedCategories(subscribedCategories);
         return categoriesOverview;
+    }
+    /*
+        this method subscribe to a specified category
+        for the requested user
+     */
+    @PostMapping("/subscribe-to-category")
+    public ResponseEntity<ResponseMessage> subscribe(@RequestBody SubscribeRequest subscribeRequest) {
+        ResponseMessage responseMessage = new ResponseMessage();
+        Subscription subscription = new Subscription();
+        UserAccount currentUser = userService.getExistingUser(subscribeRequest.getEmail());
+
+        if(currentUser == null){
+            throw new BadRequestException("Check email address. User could not be found!");
+        }
+        if (subscriptionRepository.existsByUserUserNameAndCategoryName(subscribeRequest.getEmail(), subscribeRequest.getAvailableCategory())) {
+            responseMessage.setStatus("Subscribe failed!");
+            responseMessage.setMessage("You are already subscribed to this category!");
+        }else
+        {
+            Category category = categoryRepository.findOneByNameIgnoreCase(subscribeRequest.getAvailableCategory());
+            if(category == null){
+                throw new NotFoundException("This category is not available!");
+            }
+            subscription.setCategory(category);
+            subscription.setRemainingContent(category.getAvailableContent());
+            subscription.setUser(currentUser);
+            subscription.setStartDate(LocalDate.now());
+
+            subscriptionRepository.save(subscription);
+            responseMessage.setStatus("Subscribe successful!");
+            responseMessage.setMessage("You are successfully subscribed to category: " + subscription.getCategory().getName());
+        }
+        return new ResponseEntity<>(responseMessage, HttpStatus.OK);
     }
 }
