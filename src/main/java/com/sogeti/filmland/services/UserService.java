@@ -45,6 +45,14 @@ public class UserService implements UserDetailsService {
 
     }
     /**
+     * check database and get the user with given userEmail
+     * @param userEmail user email
+     * @return user
+     */
+    public UserAccount getExistingUser(String userEmail){
+        return userAccountRepository.findOneByUserNameIgnoreCase(userEmail);
+    }
+    /**
      * adds a new user to database
      * @param user
      * @return true or false
