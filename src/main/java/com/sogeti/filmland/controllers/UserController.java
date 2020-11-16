@@ -7,6 +7,9 @@ import com.sogeti.filmland.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,14 +31,23 @@ public class UserController {
      * this method let the user login
      * by checking the requested user from the database
      * with encoded passwords
-     * @param user
      * @return status and message
      */
     @PostMapping("/login")
-    public ResponseMessage login(@RequestBody LoginRequest user) {
-        UserDetails existingUser = userService.loadUserByUsername(user.getEmail());
+    public ResponseEntity<ResponseMessage> login() {
+        ResponseMessage responseMessage = new ResponseMessage();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        return validateUser(user, existingUser);
+        if (!(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated()) {
+            responseMessage.setStatus("Login successful!");
+            responseMessage.setMessage("Welcome to Filmland!");
+        }else
+        {
+            responseMessage.setStatus("Login failed!");
+            responseMessage.setMessage("Username or password is not correct.");
+        }
+
+        return new ResponseEntity<>(responseMessage, HttpStatus.OK);
     }
     /**
      * adds a new user to database
@@ -46,24 +58,5 @@ public class UserController {
     public ResponseEntity<String> addUser(@RequestBody LoginRequest user) {
         userService.addUser(user);
         return new ResponseEntity<>("User added", HttpStatus.OK);
-    }
-    /**
-     * checks if login credentials match
-     * @param user
-     * @param existingUser
-     * @return status and message
-     */
-    private ResponseMessage validateUser(LoginRequest user, UserDetails existingUser) {
-        ResponseMessage responseMessage = new ResponseMessage();
-
-        if (existingUser != null && (passwordEncoder.matches(user.getPassword(), existingUser.getPassword()))) {
-            responseMessage.setStatus("Login successful!");
-            responseMessage.setMessage("Welcome to Filmland!");
-        }else
-        {
-            responseMessage.setStatus("Login failed!");
-            responseMessage.setMessage("Username or password is not correct.");
-        }
-        return responseMessage;
     }
 }
