@@ -2,6 +2,9 @@ package com.sogeti.filmland.dto;
 
 import javax.validation.constraints.NotNull;
 
+/**
+ * dto to transfer user inputs to backend
+ */
 public class ShareRequest {
     @NotNull
     private String email;

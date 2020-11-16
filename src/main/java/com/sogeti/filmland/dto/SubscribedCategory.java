@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDate;
 
+/**
+ * dto for mapping Subscription entity to overview
+ */
 public class SubscribedCategory {
     private String name;
     private Integer remainingContent;

@@ -1,5 +1,8 @@
 package com.sogeti.filmland.dto;
 
+/**
+ * dto for mapping Category entity to overview
+ */
 public class AvailableCategory {
     private String name;
     private Integer availableContent;

@@ -1,5 +1,8 @@
 package com.sogeti.filmland.dto;
 
+/**
+ * dto to transfer backend response to frontend
+ */
 public class ResponseMessage {
     private String status;
 

@@ -3,6 +3,9 @@ package com.sogeti.filmland.dto;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * dto to transfer all available categories and subscribed categories
+ */
 public class CategoriesOverview {
     private List<AvailableCategory> availableCategories = new ArrayList<>();
     private List<SubscribedCategory> subscribedCategories = new ArrayList<>();
