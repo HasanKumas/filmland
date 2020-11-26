@@ -34,7 +34,7 @@ public class SubscriptionController {
     @Autowired
     private SubscriptionRepository subscriptionRepository;
     @Autowired
-    UserAccountRepository userAccountRepository;
+    private UserAccountRepository userAccountRepository;
 
     /**
      * this method gets all the subscribed and available categories
@@ -68,6 +68,7 @@ public class SubscriptionController {
             availableCategory.setPrice(category.getPrice());
             allAvailableCategories.add((availableCategory));
         }
+        availableCategories = allAvailableCategories;
         /* map subscriptions to SubscribedCategory dto
          */
         if(subscriptions.size() > 0) {
@@ -82,12 +83,11 @@ public class SubscriptionController {
                 /*
                     remove subscribed categories from allAvailableCategories list to get remaining categories
                  */
-                availableCategories = allAvailableCategories.stream()
+                availableCategories = availableCategories.stream()
                         .filter(item -> !item.getName().equals(subscription.getCategory().getName()))
                         .collect(Collectors.toList());
             }
-        }else
-            availableCategories = allAvailableCategories;
+        }
         /*
             transfer available categories and subscribed categories to
             CategoriesOverview dto
@@ -130,8 +130,9 @@ public class SubscriptionController {
             subscription.setStartDate(LocalDate.now());
             subscription.setPaymentDate(LocalDate.now().plusMonths(1));
             subscriptionRepository.save(subscription);
-            // get saved subscription from database and connect it to current user
-            currentUser.getSubscriptions().add(subscriptionRepository.findOneByCategoryNameIgnoreCase(subscription.getCategory().getName()));
+            // get saved subscription by its id from database and connect it to current user
+//            currentUser.getSubscriptions().add(subscriptionRepository.findOneByCategoryNameIgnoreCase(subscription.getCategory().getName()));
+            currentUser.getSubscriptions().add(subscriptionRepository.getOne(subscription.getId()));
             userAccountRepository.save(currentUser);
             // set response
             responseMessage.setStatus("Login successful!");

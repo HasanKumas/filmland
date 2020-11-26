@@ -15,6 +15,8 @@ public class SubscriptionService {
 
     /**
      * checks if user or customer is already subscribed to requested category
+     * if subscribed returns subscription
+     * if not subscribed returns null
      * @param user current user or customer
      * @param categoryName category name
      * @return null or subscription
@@ -22,10 +24,8 @@ public class SubscriptionService {
     public Subscription getSubscription(UserAccount user, String categoryName){
         List<Subscription> allUserSubscriptions = user.getSubscriptions();
         Subscription subscription = null;
-        Boolean isSubscribed = false;
         for (Subscription subscription1 : allUserSubscriptions) {
             if(subscription1.getCategory().getName().equals(categoryName)){
-                isSubscribed = true;
                 subscription = subscription1;
                 break;
             }

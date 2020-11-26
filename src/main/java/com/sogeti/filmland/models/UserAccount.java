@@ -15,7 +15,7 @@ public class UserAccount {
     private Long id;
 
     @NotNull
-    @Size(max = 60)
+    @Size(min = 5, max = 60)
     @Column(unique=true)
     private String userName;
 
