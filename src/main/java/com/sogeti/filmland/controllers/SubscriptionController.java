@@ -6,35 +6,29 @@ import com.sogeti.filmland.exceptions.NotFoundException;
 import com.sogeti.filmland.models.Category;
 import com.sogeti.filmland.models.Subscription;
 import com.sogeti.filmland.models.UserAccount;
-import com.sogeti.filmland.repositories.CategoryRepository;
-import com.sogeti.filmland.repositories.SubscriptionRepository;
-import com.sogeti.filmland.repositories.UserAccountRepository;
+import com.sogeti.filmland.services.CategoryService;
 import com.sogeti.filmland.services.SubscriptionService;
 import com.sogeti.filmland.services.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("filmland") // end point
 public class SubscriptionController {
-    @Autowired // connect to database
-    private UserService userService;
-    @Autowired
-    private SubscriptionService subscriptionService;
-    @Autowired
-    private CategoryRepository categoryRepository;
-    @Autowired
-    private SubscriptionRepository subscriptionRepository;
-    @Autowired
-    private UserAccountRepository userAccountRepository;
+    // connect to database
+    private final UserService userService;
+    private final SubscriptionService subscriptionService;
+    private final CategoryService categoryService;
+
+    public SubscriptionController(UserService userService, SubscriptionService subscriptionService, CategoryService categoryService) {
+        this.userService = userService;
+        this.subscriptionService = subscriptionService;
+        this.categoryService = categoryService;
+    }
 
     /**
      * this method gets all the subscribed and available categories
@@ -45,57 +39,17 @@ public class SubscriptionController {
     @GetMapping("/all-categories")
     public CategoriesOverview getAllCategories(@RequestParam("email") String email) {
         checkAuthentication(email);
-
-        UserAccount currentUser = userService.getExistingUser(email);
-        CategoriesOverview categoriesOverview = new CategoriesOverview();
-        List<AvailableCategory> allAvailableCategories = new ArrayList<>();
-        List<AvailableCategory> availableCategories = new ArrayList<>();
-        List<SubscribedCategory> subscribedCategories = new ArrayList<>();
-
         /*
             get categories and user subscriptions from database
          */
+        UserAccount currentUser = userService.getExistingUser(email);
         List<Subscription> subscriptions = userService.getAllUserSubscriptions(currentUser);
-        List<Category> categories = categoryRepository.findAll();
+        List<Category> categories = categoryService.getAllCategories();
 
-
-        /* map categories to Availablecategory dto
-         */
-        for(Category category: categories) {
-            AvailableCategory availableCategory = new AvailableCategory();
-            availableCategory.setName(category.getName());
-            availableCategory.setAvailableContent(category.getAvailableContent());
-            availableCategory.setPrice(category.getPrice());
-            allAvailableCategories.add((availableCategory));
-        }
-        availableCategories = allAvailableCategories;
-        /* map subscriptions to SubscribedCategory dto
-         */
-        if(subscriptions.size() > 0) {
-            for (Subscription subscription : subscriptions) {
-                SubscribedCategory subscribedCategory = new SubscribedCategory();
-                subscribedCategory.setName(subscription.getCategory().getName());
-                subscribedCategory.setRemainingContent(subscription.getRemainingContent());
-                subscribedCategory.setPrice(subscription.getCategory().getPrice());
-                subscribedCategory.setStartDate(subscription.getStartDate());
-                subscribedCategories.add(subscribedCategory);
-
-                /*
-                    remove subscribed categories from allAvailableCategories list to get remaining categories
-                 */
-                availableCategories = availableCategories.stream()
-                        .filter(item -> !item.getName().equals(subscription.getCategory().getName()))
-                        .collect(Collectors.toList());
-            }
-        }
-        /*
-            transfer available categories and subscribed categories to
-            CategoriesOverview dto
-         */
-        categoriesOverview.setAvailableCategories(availableCategories);
-        categoriesOverview.setSubscribedCategories(subscribedCategories);
-        return categoriesOverview;
+        return categoryService.getCategoriesOverview(categories, subscriptions);
     }
+
+
     /**
      * this method subscribe to a specified category
      * for the requested user
@@ -107,36 +61,26 @@ public class SubscriptionController {
         checkAuthentication(subscribeRequest.getEmail());
 
         ResponseMessage responseMessage = new ResponseMessage();
-        Subscription subscription = new Subscription();
-        UserAccount currentUser = userService.getExistingUser(subscribeRequest.getEmail());
 
+        UserAccount currentUser = userService.getExistingUser(subscribeRequest.getEmail());
         // checks if user is subscribed to requested category
-        Boolean isUserSubscribed = subscriptionService.getSubscription(currentUser, subscribeRequest.getAvailableCategory()) != null;
+        boolean isUserSubscribed = subscriptionService.getSubscription(currentUser, subscribeRequest.getAvailableCategory()) != null;
+        System.out.println(subscriptionService.getSubscription(currentUser, subscribeRequest.getAvailableCategory()).getCategory().getName());
+
         if (isUserSubscribed) {
             responseMessage.setStatus("Login successful!");
             responseMessage.setMessage("You are already subscribed to this category!");
         }else
         {
-            Category category = categoryRepository.findOneByNameIgnoreCase(subscribeRequest.getAvailableCategory());
+            Category category = categoryService.getCategoryByName(subscribeRequest.getAvailableCategory());
             if(category == null){
                 throw new NotFoundException("This category is not available!");
             }
-            // set the fields of new subscription and save it to database
-            subscription.setCategory(category);
-            subscription.setRemainingContent(category.getAvailableContent());
-            List<UserAccount> users = subscription.getUsers();
-            users.add(currentUser);
-            subscription.setUsers(users);
-            subscription.setStartDate(LocalDate.now());
-            subscription.setPaymentDate(LocalDate.now().plusMonths(1));
-            subscriptionRepository.save(subscription);
-            // get saved subscription by its id from database and connect it to current user
-//            currentUser.getSubscriptions().add(subscriptionRepository.findOneByCategoryNameIgnoreCase(subscription.getCategory().getName()));
-            currentUser.getSubscriptions().add(subscriptionRepository.getOne(subscription.getId()));
-            userAccountRepository.save(currentUser);
+            subscriptionService.addSubscription(category, currentUser);
+
             // set response
             responseMessage.setStatus("Login successful!");
-            responseMessage.setMessage("You are successfully subscribed to category: " + subscription.getCategory().getName());
+            responseMessage.setMessage("You are successfully subscribed to category: " + category.getName());
         }
         return new ResponseEntity<>(responseMessage, HttpStatus.OK);
     }
@@ -148,22 +92,21 @@ public class SubscriptionController {
      */
     @PostMapping("/share-category")
     public ResponseMessage share(@RequestBody ShareRequest shareRequest) {
-        if(!userService.isAuthenticated(shareRequest.getEmail())){
-            throw new BadCredentialsException("Not authorized user! Check email address.");
-        }
+
+        checkAuthentication(shareRequest.getEmail());
         ResponseMessage responseMessage = new ResponseMessage();
 
         UserAccount currentUser = userService.getExistingUser(shareRequest.getEmail());
         UserAccount customer = userService.getExistingUser(shareRequest.getCustomer());
-        Category category = categoryRepository.findOneByNameIgnoreCase(shareRequest.getSubscribedCategory());
+        Category category = categoryService.getCategoryByName(shareRequest.getSubscribedCategory());
 
         if(category == null || customer == null){
             throw new BadRequestException("Check customer email address and subscribedCategory name!");
         }
-        // checks if user is subscribed to requested category check for customer?
+        // checks if user/customer is subscribed to requested category
         Subscription sharedSubscription = subscriptionService.getSubscription(currentUser, shareRequest.getSubscribedCategory());
-        Boolean isUserSubscribed = sharedSubscription != null ? true : false;
-        Boolean isCustomerSubscribed = subscriptionService.getSubscription(customer, shareRequest.getSubscribedCategory()) != null;
+        boolean isUserSubscribed = sharedSubscription != null;
+        boolean isCustomerSubscribed = subscriptionService.getSubscription(customer, shareRequest.getSubscribedCategory()) != null;
 
         if (!isUserSubscribed || isCustomerSubscribed) {
             responseMessage.setStatus("Login successful!");
@@ -171,7 +114,7 @@ public class SubscriptionController {
         }else
         {
             customer.getSubscriptions().add(sharedSubscription);
-            userAccountRepository.save(customer);
+            userService.updateUser(customer);
 
             responseMessage.setStatus("Login successful!");
             responseMessage.setMessage("You shared successfully a subscribed category: "

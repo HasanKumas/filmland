@@ -24,16 +24,20 @@ import java.util.List;
 @Service
 @Component
 public class UserService implements UserDetailsService {
-    @Autowired // connect to database
-    private UserAccountRepository userAccountRepository;
+     // connect to database
+    private final UserAccountRepository userAccountRepository;
     @Autowired
     PasswordEncoder passwordEncoder;
+
+    public UserService(UserAccountRepository userAccountRepository) {
+        this.userAccountRepository = userAccountRepository;
+    }
 
     /**
      * introduces user to spring security
      * @param userEmail email
      * @return UserDetails
-     * @throws UsernameNotFoundException
+     * @throws UsernameNotFoundException username not found
      */
     @Override
     public UserDetails loadUserByUsername(String userEmail) throws UsernameNotFoundException {
@@ -58,10 +62,9 @@ public class UserService implements UserDetailsService {
     }
     /**
      * adds a new user to database
-     * @param user
-     * @return true or false
+     * @param user user
      */
-    public Boolean addUser(LoginRequest user) {
+    public void addUser(LoginRequest user) {
         UserAccount existingUser = userAccountRepository.findOneByUserNameIgnoreCase(user.getEmail());
         if(existingUser != null) {
             throw new BadRequestException("This user email is already registered!");
@@ -70,7 +73,6 @@ public class UserService implements UserDetailsService {
         newUser.setUserName(user.getEmail());
         newUser.setPassword(passwordEncoder.encode(user.getPassword()));
         userAccountRepository.save(newUser);
-        return true;
     }
     /**
      * checks authenticated user matches with requested user
@@ -92,6 +94,10 @@ public class UserService implements UserDetailsService {
      */
     public List<Subscription> getAllUserSubscriptions(UserAccount user){
         return user.getSubscriptions();
+    }
+
+    public void updateUser(UserAccount currentUser) {
+        userAccountRepository.save(currentUser);
     }
 
 }

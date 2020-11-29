@@ -23,7 +23,7 @@ public class UserAccount {
     @Size(min = 8, max = 60)
     private String password;
 
-    @ManyToMany
+    @ManyToMany(cascade = CascadeType.REMOVE)
     @JoinTable(
             name = "USER_ACCOUNT_SUBSCRIPTIONS",
             joinColumns = @JoinColumn(name = "user_account_id"),

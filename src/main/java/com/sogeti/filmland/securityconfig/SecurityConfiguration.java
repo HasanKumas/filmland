@@ -25,7 +25,8 @@ public class SecurityConfiguration extends WebSecurityConfigurerAdapter {
                 .antMatchers("/filmland/login", "/filmland/add-user", "/h2-console/**").permitAll()
                 .anyRequest().authenticated()
                 .and().httpBasic()
-                .and().sessionManagement().disable();
+                .and().sessionManagement().disable()
+                .logout();
         //disabled to use h2-console with security
         http.headers().frameOptions().disable();
         // for customizing authentication exceptions

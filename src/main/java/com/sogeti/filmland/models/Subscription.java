@@ -26,12 +26,12 @@ public class Subscription {
     @JsonFormat(pattern = "dd-MM-yyyy")
     private LocalDate paymentDate;
 
-    @OneToOne
+    @OneToOne(orphanRemoval = false)
     @NotNull
     @JsonIgnore
     private Category category;
 
-    @ManyToMany(mappedBy = "subscriptions")
+    @ManyToMany(mappedBy = "subscriptions", cascade = CascadeType.DETACH)
     @JsonIgnore
     @NotNull
     private List<UserAccount> users;

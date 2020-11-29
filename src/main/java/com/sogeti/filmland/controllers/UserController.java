@@ -3,8 +3,6 @@ package com.sogeti.filmland.controllers;
 import com.sogeti.filmland.dto.LoginRequest;
 import com.sogeti.filmland.dto.ResponseMessage;
 import com.sogeti.filmland.services.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -15,8 +13,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("filmland") // end point
 public class UserController {
-    @Autowired // connect to database
-    private UserService userService;
+    // connect to database
+    private final UserService userService;
+
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
     /**
      * this method let the user login
